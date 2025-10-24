@@ -32,7 +32,7 @@ def generate_launch_description():
 
     params_declare = DeclareLaunchArgument('params_file',
                                            default_value=os.path.join(
-                                               share_dir, 'params', 'ydlidar.yaml'),
+                                               share_dir, 'params', 'X2.yaml'),
                                            description='FPath to the ROS2 parameters file to use.')
 
     driver_node = LifecycleNode(package='ydlidar_ros2_driver',
@@ -41,7 +41,7 @@ def generate_launch_description():
                                 output='screen',
                                 emulate_tty=True,
                                 parameters=[parameter_file],
-                                namespace='/',
+                                namespace='/pioneer3DX',
                                 )
     tf2_node = Node(package='tf2_ros',
                     executable='static_transform_publisher',

@@ -20,7 +20,6 @@
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "LaserPublisher.h"
-#include "rosaria/msg/bumper_state.hpp"
 
 //tf2 includes
 #include <tf2_ros/transform_broadcaster.h>
@@ -92,7 +91,6 @@ class RosAriaNode : public rclcpp::Node
     odom_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this);
 
     pose_pub = this->create_publisher<nav_msgs::msg::Odometry>("pose", 1000);
-    bumpers_pub = this->create_publisher<rosaria::msg::BumperState>("bumper", 1000);
     voltage_pub = this->create_publisher<std_msgs::msg::Float64>("battery_voltage", 1000);
     state_of_charge_pub = this->create_publisher<std_msgs::msg::Float32>("battery_state_of_charge", 100);
     recharge_state_pub = this->create_publisher<std_msgs::msg::Int8>("battery_recharge_state", 5);
@@ -139,8 +137,6 @@ class RosAriaNode : public rclcpp::Node
     std::string serial_port;
     std::string aria_log_filename;
 
-    rosaria::msg::BumperState bumpers;
-
     int TicksMM, DriftFactor, RevCount;
     double trans_accel, trans_decel, lat_accel, lat_decel;
     double rot_accel, rot_decel;
@@ -160,7 +156,6 @@ class RosAriaNode : public rclcpp::Node
 	
 //publish() specific variables
 	rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pose_pub;
-	rclcpp::Publisher<rosaria::msg::BumperState>::SharedPtr bumpers_pub;
 	rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr voltage_pub;
 	rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr state_of_charge_pub;
 	rclcpp::Publisher<std_msgs::msg::Int8>::SharedPtr recharge_state_pub;
@@ -177,7 +172,6 @@ class RosAriaNode : public rclcpp::Node
 
 	std::string frame_id_odom = "odom";
 	std::string frame_id_base_link = "base_link";
-	std::string frame_id_bumper = "bumpers";
 	std::string frame_id_sonar = "sonar";
 	
 };
@@ -323,8 +317,6 @@ void RosAriaNode::cmdvel_watchdog()
   }
 }
 
-
-
 int RosAriaNode::Setup()
 {
   // Note, various objects are allocated here which are never deleted (freed), since Setup() is only supposed to be
@@ -409,9 +401,6 @@ int RosAriaNode::Setup()
   // callback will  be called by ArRobot background processing thread for every SIP data packet received from robot
   robot->addSensorInterpTask("ROSPublishingTask", 100, &myPublishCB);
 
-  // Initialize bumpers with robot number of bumpers
-  bumpers.front_bumpers.resize(robot->getNumFrontBumpers());
-  bumpers.rear_bumpers.resize(robot->getNumRearBumpers());
 
   // Run ArRobot background processing thread
   robot->runAsync(true);
@@ -465,8 +454,6 @@ int RosAriaNode::Setup()
 
   return 0;
 }
-
-
 
 void RosAriaNode::readParameters()
 {
@@ -585,37 +572,7 @@ void RosAriaNode::publish()
   odom_trans.transform.rotation = tf2::toMsg(x);
 
   odom_broadcaster->sendTransform(odom_trans);
-  /* Descomente se seu robõ tem bumpers.
-  // getStallValue returns 2 bytes with stall bit and bumper bits, packed as (00 00 FrontBumpers RearBumpers)
-  int stall = robot->getStallValue();
-  unsigned char front_bumpers = (unsigned char)(stall >> 8);
-  unsigned char rear_bumpers = (unsigned char)(stall);
-
-  bumpers.header.frame_id = frame_id_bumper;
-  bumpers.header.stamp = this->now();
-
-  std::stringstream bumper_info(std::stringstream::out);
-  // Bit 0 is for stall, next bits are for bumpers (leftmost is LSB)
-  for (unsigned int i=0; i<robot->getNumFrontBumpers(); i++)
-  {
-    bumpers.front_bumpers[i] = (front_bumpers & (1 << (i+1))) == 0 ? 0 : 1;
-    bumper_info << " " << (front_bumpers & (1 << (i+1)));
-  }
-  RCLCPP_DEBUG(this->get_logger(), "RosAria: Front bumpers:%s", bumper_info.str().c_str());
-
-  bumper_info.str("");
-  // Rear bumpers have reverse order (rightmost is LSB)
-  unsigned int numRearBumpers = robot->getNumRearBumpers();
-  for (unsigned int i=0; i<numRearBumpers; i++)
-  {
-    bumpers.rear_bumpers[i] = (rear_bumpers & (1 << (numRearBumpers-i))) == 0 ? 0 : 1;
-    bumper_info << " " << (rear_bumpers & (1 << (numRearBumpers-i)));
-  }
-  RCLCPP_DEBUG(this->get_logger(),"RosAria: Rear bumpers:%s", bumper_info.str().c_str());
   
-
-  bumpers_pub->publish(bumpers);
-  */
   //Publish battery information
   // TODO: Decide if BatteryVoltageNow (normalized to (0,12)V)  is a better option
   std_msgs::msg::Float64 batteryVoltage;
@@ -715,11 +672,6 @@ void RosAriaNode::publish()
   } // end if sonar_enabled
 
 }
-
-
-
-
-
 
 int main( int argc, char** argv )
 {

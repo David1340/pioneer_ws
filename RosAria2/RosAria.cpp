@@ -299,7 +299,7 @@ void RosAriaNode::cmdvel_cb(const geometry_msgs::msg::Twist::SharedPtr msg)
     robot->setLatVel(msg->linear.y*1e3);
   robot->setRotVel(msg->angular.z*180/M_PI);
   robot->unlock();
-  RCLCPP_INFO(this->get_logger(),"RosAria: sent vels to to aria (tiwatchdogme %f): x vel %f mm/s, y vel %f mm/s, ang vel %f deg/s", veltime.nanoseconds()/1e9,
+  RCLCPP_INFO(this->get_logger(),"RosAria: sent vels to to aria (time %f): x vel %f mm/s, y vel %f mm/s, ang vel %f deg/s", veltime.nanoseconds()/1e9,
     (double) msg->linear.x * 1e3, (double) msg->linear.y * 1e3, (double) msg->angular.z * 180/M_PI);
 }
 

@@ -299,15 +299,16 @@ void RosAriaNode::cmdvel_cb(const geometry_msgs::msg::Twist::SharedPtr msg)
     robot->setLatVel(msg->linear.y*1e3);
   robot->setRotVel(msg->angular.z*180/M_PI);
   robot->unlock();
-  RCLCPP_INFO(this->get_logger(),"RosAria: sent vels to to aria (time %f): x vel %f mm/s, y vel %f mm/s, ang vel %f deg/s", veltime.nanoseconds()/1e9,
+  RCLCPP_INFO(this->get_logger(),"RosAria: sent vels to to aria (tiwatchdogme %f): x vel %f mm/s, y vel %f mm/s, ang vel %f deg/s", veltime.nanoseconds()/1e9,
     (double) msg->linear.x * 1e3, (double) msg->linear.y * 1e3, (double) msg->angular.z * 180/M_PI);
 }
 
 void RosAriaNode::cmdvel_watchdog()
 {
   // stop robot if no cmd_vel message was received for 0.6 seconds
-  if (this->now() - veltime > rclcpp::Duration(0.6,0))
+  if (this->now().nanoseconds()/1e9 - veltime.nanoseconds()/1e9 > 0.6)
   {
+    RCLCPP_INFO(this->get_logger(),"watchdog foi chamado!");
     robot->lock();
     robot->setVel(0.0);
     if(robot->hasLatVel())

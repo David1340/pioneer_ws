@@ -9,11 +9,16 @@ def generate_launch_description():
 
 
     lidar_launch = os.path.join(
-        get_package_share_directory('ydlidar_ros2_driver'),
+        get_package_share_directory('rplidar_ros'),
         'launch',
-        'ydlidar_launch.py'
+        'rplidar_a2m8_launch.py'
     )
 
+    description_launch = os.path.join(
+        get_package_share_directory('pioneer3dx_description'),
+        'launch',
+        'rsp.launch.py'
+    )
 
     return LaunchDescription([
         Node(
@@ -28,5 +33,9 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(lidar_launch)
         ),
 
-    ]
-)
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(description_launch)
+        )
+
+    ])
+
